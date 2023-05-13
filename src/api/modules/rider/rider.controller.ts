@@ -82,7 +82,7 @@ const getNearByRiders = async (req: Request, res: Response) => {
   });
 };
 
-export default {
+export {
   addRider,
   deleteRider,
   updateRider,

@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
-import { getRiders } from "./controllers/riders.controller";
+import { getNearByRiders } from "../api/modules/rider/rider.controller";
 const router = Router();
 
-router.use("/nearby-riders", getRiders);
+router.use("/nearby-riders", getNearByRiders);
 
 export default router;
