@@ -29,24 +29,27 @@ export type RiderLocation = Array<{
 }>;
 
 // Function to get all the riders within a radius of a point in Redis
-export async function getRidersWithinRadius(point: {
-  latitude: number;
-  longitude: number;
-}): Promise<any> {
+export async function getRidersWithinRadius(
+  point: {
+    latitude: number;
+    longitude: number;
+  },
+  callback: (err: any, res: any) => void
+): Promise<any> {
   // Get the latitude and longitude of the point
   const latitude = point.latitude;
   const longitude = point.longitude;
 
   const radius = 5000; // meters
 
-  const nearbyRiders = await client.georadius(
+  const nearbyRiders = client.georadius(
     "riders",
     latitude,
     longitude,
     radius,
     "m",
     (err, res) => {
-      console.log(res);
+      callback(err, res);
     }
   );
   return nearbyRiders;
