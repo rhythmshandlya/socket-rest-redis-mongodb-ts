@@ -1,7 +1,7 @@
 import { RedisClient } from "redis";
 import config from "../common/config";
 
-const redis = require("redis");
+import * as redis from "redis";
 
 // Create a Redis instance
 let client = redis.createClient(config.redisURI);
@@ -13,14 +13,14 @@ export function disconnectRedis() {
 // Function to set a rider location in Redis
 export function setRiderLocation(
   riderId: string,
-  latitude: number,
-  longitude: number
+  point: {
+    latitude: number;
+    longitude: number;
+  }
 ) {
-  // Create a geo-spatial key
-  const key = `rider_location:${riderId}`;
-
+  console.log("Setting rider location", riderId, point);
   // Set the geo-spatial value
-  client.geoadd(key, latitude, longitude);
+  client.geoadd("riders", [point.latitude, point.longitude, riderId]);
 }
 
 export type RiderLocation = Array<{
@@ -29,23 +29,27 @@ export type RiderLocation = Array<{
 }>;
 
 // Function to get all the riders within a radius of a point in Redis
-export function getRidersWithinRadius(
-  point: { latitude: number; longitude: number },
-  radius: number
-): RiderLocation {
+export async function getRidersWithinRadius(point: {
+  latitude: number;
+  longitude: number;
+}): Promise<any> {
   // Get the latitude and longitude of the point
-  const lat = point.latitude;
-  const lon = point.longitude;
+  const latitude = point.latitude;
+  const longitude = point.longitude;
 
-  // Get all the riders within the radius of the point
-  const riders = client.georadius("rider_location", lat, lon, radius, {
-    unit: "km",
-    withdist: true,
-    withcoord: true,
-  });
+  const radius = 5000; // meters
 
-  // Return the array of riders
-  return riders;
+  const nearbyRiders = await client.georadius(
+    "riders",
+    latitude,
+    longitude,
+    radius,
+    "m",
+    (err, res) => {
+      console.log(res);
+    }
+  );
+  return nearbyRiders;
 }
 
 export default client;
