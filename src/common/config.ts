@@ -22,7 +22,7 @@ process.env.REDIS_URI = process.env.REDIS_URL || "redis://redis:6379";
 export default {
   env: process.env.NODE_ENV,
   // express server port
-  serverPort: parseInt(process.env.SERVER_PORT, 10),
+  serverPort: Number(process.env.SERVER_PORT),
 
   // redis port
   redisURI: process.env.REDIS_URI,

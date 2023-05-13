@@ -1,14 +1,7 @@
-import JsonWebToken from './middlewares/JsonWebToken';
-
 import { Router, Request, Response } from "express";
-
-import { store, list } from './controllers/TodoController';
-import { storeValidation } from './validations/Todo';
-
+import { healthCheck } from "./controllers/test.controller";
 const router = Router();
 
-router.use('/sample-platform', JsonWebToken);
-router.post('/sample-platform/store', storeValidation, store);
-router.get('/sample-platform/list', list);
+router.use("/test", healthCheck);
 
 export default router;
