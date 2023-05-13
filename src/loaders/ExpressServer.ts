@@ -1,66 +1,47 @@
-import * as express from 'express';
-import * as bodyParser from "body-parser";
+import * as cors from "cors";
+import * as express from "express";
+import { Express } from "express";
+
+import helmet from "helmet";
+import * as httpStatus from "http-status";
+
+import { ApiError, errorConverter, errorHandler } from "@dinedrop/shared";
+import { morgan } from "@dinedrop/shared";
 import config from "../common/config";
-import cors = require('cors');
-import errorHandler from "../responses/ErrorHandler";
-import routes from '../api/routes';
-import routeNotFound from '../api/middlewares/RouteNotFound';
+import routes from "../api/routes";
 
-import { Server, createServer } from 'http';
-import { RedisClient } from 'redis';
-import RedisServer from './RedisServer';
+const app: Express = express();
 
-
-class ExpressServer {
-    public static readonly PORT: number = 8080;
-
-    private _app: express.Application;
-    private _server: Server;
-    private _port: number;
-
-    public constructor() {
-        this.listen();
-    }
-
-    private listen(): void {
-
-        // initialize express instances 
-        this._app = express();
-
-        // only accept content type application/json
-        this._app.use(bodyParser.urlencoded({ extended: false }));
-        this._app.use(bodyParser.json({ type: "*/*" }));
-        this._app.use(cors());
-        this._app.use('/api', routes);
-        this._app.use('*', routeNotFound);
-        this._app.use(errorHandler);
-
-        // start nodejs server
-        this._port = config.serverPort || ExpressServer.PORT;
-        this._server = createServer(this._app);
-        this._server.listen(this._port, () => {
-            console.log('Running Express Server on port %s', this._port);
-        })
-
-    }
-
-    public close(): void {
-        this._server.close((err) => {
-            if (err) throw Error();
-
-            console.info(new Date(), '[ExpressServer]: Stopped');
-        });
-    }
-
-    public initSocket(socket: SocketIO.Server): void {
-        this._app.set('socket', socket);
-    }
-
-    public initRedis(redis: RedisServer): void {
-        this._app.set('redis', redis);
-    }
-
-    get server(): Server { return this._server; }
+if (config.env !== "test") {
+  app.use(morgan.successHandler);
+  app.use(morgan.errorHandler);
 }
 
-export default ExpressServer; 
+// set security HTTP headers
+app.use(helmet());
+
+// enable cors
+app.use(cors());
+app.options("*", cors());
+
+// parse json request body
+app.use(express.json());
+
+// parse urlencoded request body
+app.use(express.urlencoded({ extended: true }));
+
+// v1 api routes
+app.use("/", routes);
+
+// send back a 404 error for any unknown api request
+app.use((_req, _res, next) => {
+  next(new ApiError(httpStatus.NOT_FOUND, "Not found"));
+});
+
+// convert error to ApiError, if needed
+app.use(errorConverter);
+
+// handle error
+app.use(errorHandler);
+
+export default app;

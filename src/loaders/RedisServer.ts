@@ -1,49 +1,51 @@
-import * as redis from "redis";
+import { RedisClient } from "redis";
 import config from "../common/config";
 
-class RedisServer {
-    private _redis: redis.RedisClient;
-    private _redisPort: number = config.redisPort;
+const redis = require("redis");
 
-    public initialize(): redis.RedisClient {
+// Create a Redis instance
+let client = redis.createClient(config.redisURI);
 
-        if (this._redis) {
-            console.info(new Date(), '[Redis]: Already Started');
-        }
-
-        if (this._redis === undefined) {
-            const redisOptions: redis.ClientOpts = {
-                host: config.redisHost,
-                port: config.redisPort,
-
-            };
-            this._redis = redis.createClient(redisOptions);
-            console.log('Running Redis Server on port %s', this._redisPort);
-        }
-
-        return this._redis;
-    }
-
-    public getValueWithKey(key: string): Promise<string | null> {
-        return new Promise((resolve, reject) => {
-            this._redis.get(key, (err, value) => {
-
-                if (err) return reject(err);
-                if (value) return resolve(value.toString());
-
-                return resolve(null);
-            })
-        })
-    }
-
-    public close() {
-        this._redis.quit();
-        console.info(new Date(), "[RedisServer]: Stoppped");
-    }
-
-    get instance(): redis.RedisClient {
-        return this._redis;
-    }
+export function disconnectRedis() {
+  client.quit();
 }
 
-export default RedisServer; 
+// Function to set a rider location in Redis
+export function setRiderLocation(
+  riderId: string,
+  latitude: number,
+  longitude: number
+) {
+  // Create a geo-spatial key
+  const key = `rider_location:${riderId}`;
+
+  // Set the geo-spatial value
+  client.geoadd(key, latitude, longitude);
+}
+
+export type RiderLocation = Array<{
+  id: string;
+  location: { latitude: number; longitude: number };
+}>;
+
+// Function to get all the riders within a radius of a point in Redis
+export function getRidersWithinRadius(
+  point: { latitude: number; longitude: number },
+  radius: number
+): RiderLocation {
+  // Get the latitude and longitude of the point
+  const lat = point.latitude;
+  const lon = point.longitude;
+
+  // Get all the riders within the radius of the point
+  const riders = client.georadius("rider_location", lat, lon, radius, {
+    unit: "km",
+    withdist: true,
+    withcoord: true,
+  });
+
+  // Return the array of riders
+  return riders;
+}
+
+export default client;
