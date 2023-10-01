@@ -134,17 +134,6 @@ Tool and Technologies
 5. Socket.io v2.3.0
 6. Redis v3.0.2 
 
-About
-=====
-Author
-------
-- Yinghua Chai
-
-License
--------
-This project does not contain any license.
-
-
 
 
 
